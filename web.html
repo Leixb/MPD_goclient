@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <title>MPD Client</title>
+
+        <meta charset="UTF-8">
+
+        <meta name="description" content="MPD Client">
+        <meta name="keywords" content="mpd, music">
+        <meta name="author" content="me">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <link rel="stylesheet" href="/assets/bootstrap-4.0.0-dist/css/bootstrap.min.css">
+        <link href="/assets/fawesome/css/all.css" rel="stylesheet">
+    </head>
+    <body class="bg-secondary">
+
+
+        <div id="content">
+
+            <nav class="navbar sticky-top navbar-expand-sm bg-dark navbar-dark">
+
+                <a class="navbar-brand" href="#">Simple MPD client</a>
+
+                <!--<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">-->
+                <!--<span class="navbar-toggler-icon"></span>-->
+                <!--</button>-->
+
+                <!-- Navbar links -->
+                <!--<div class="collapse navbar-collapse" id="collapsibleNavbar">-->
+                <!--<ul class="navbar-nav">-->
+                <!--<li class="nav-item">-->
+                <!--<span class="nav-link" id="mybtn">Home</span>-->
+                <!--</li>-->
+                <!--</ul>-->
+                <!--</div>-->
+            </nav>
+
+            <div class="container bg-light">
+                <div class="row">
+
+                    <div id="pings" class="col-sm-8"></div>
+
+                </div>
+            </div>
+
+            <div class="container bg-light jumbotron">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <img id="coverimg" class="rounded img-fluid float-left" src="cover"></img>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <h1 id="song-title"></h1>
+                        <h2 id="song-artist"></h2>
+                        <h3 id="song-album"></h3>
+                        <hr/>
+                        <div id="next-song" style="text-align:right; color:lightgray;">
+
+                            <h1 id="song-title-next"></h1>
+                            <h2 id="song-artist-next"></h2>
+                            <h3 id="song-album-next"></h3>
+                        </div>
+
+                        <hr/>
+
+                        <div id="music_buttons" class="justify-content-center">
+                            <div class="row justify-content-center">
+                                <div class="btn-group btn-group-lg" role="group">
+                                    <button id="prev" class="col-xs-2 btn btn-primary"> <i class="fas fa-step-backward"></i></button>
+                                    <button id="toggle" class="col-xs-2 btn btn-primary"><i class="fas fa-play"></i></button>
+                                    <button id="next" class="col-xs-2 btn btn-primary"> <i class="fas fa-step-forward"></i></button>
+                                </div>
+                            </div>
+                            <div class="row justify-content-center">
+
+                                <div class="btn-group btn-group-lg" role="group">
+                                    <button id="consume" class="col-xs-2 btn" title="consume"> <i class="fas fa-minus-circle"></i></button>
+                                    <button id="repeat" class="col-xs-2 btn" title="repeat"><i class="fas fa-redo"></i></button>
+                                    <button id="random" class="col-xs-2 btn" title="random"> <i class="fas fa-random"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+                <h1>Queue <i id="shuf-play" title="Shuffle playlist" class="fas fa-random fa-xs"></i></h1>
+                <div id="playlist">
+                </div>
+
+            </div>
+
+        </div>
+
+        <script src="web.js"></script>
+
+        <!-- bundle: bootstrap4 + Popper + jQuery -->
+        <script src="/assets/bundle.js"></script>
+
+    </body>
+</html>
