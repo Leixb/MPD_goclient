@@ -6,8 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	//"strings"
-	"time"
 )
 
 type Broker struct {
@@ -69,21 +67,14 @@ func (b *Broker) Publish(msg interface{}) {
 func main() {
 	r := gin.Default()
 
-	//corsConfig := cors.DefaultConfig()
-	//corsConfig.AllowOrigins = []string{"*"}
-	//r.Use(cors.New(corsConfig))
-
 	MPDConn, err := mpdconn.NewMPDconn("localhost:6600")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	data := map[string]interface{}{
-		"message": "ping",
-	}
-
 	b := NewBroker()
 	go b.Start()
+	go UpdateAlbum(MPDConn, b)
 
 	r.GET("/sse", func(c *gin.Context) {
 
@@ -99,17 +90,6 @@ func main() {
 		})
 	})
 
-	r.GET("/ajax", func(c *gin.Context) {
-		c.JSON(http.StatusOK, data)
-	})
-	r.GET("/JSONP", func(c *gin.Context) {
-		c.JSONP(http.StatusOK, data)
-	})
-	r.GET("/slowQuery", func(c *gin.Context) {
-		time.Sleep(5 * time.Second)
-		c.JSON(http.StatusOK, data)
-	})
-
 	r.GET("/mpd/:cmd", func(c *gin.Context) {
 		data, err := MPDConn.Request(c.Param("cmd"))
 
@@ -122,54 +102,11 @@ func main() {
 		}
 	})
 
-	go UpdateAlbum(MPDConn, b)
-
 	r.StaticFile("/", "./web.html")
 	r.StaticFile("/cover", "./cover")
 	r.StaticFile("/web.js", "./web.js")
 	r.StaticFile("/style.css", "./style.css")
 	r.Static("/assets/", "./assets")
+
 	r.Run() // listen and serve on 0.0.0.0:8080
-}
-
-func format_song(song []string) map[string]string {
-	if len(song) < 4 {
-		return map[string]string{
-			"title":  "",
-			"artist": "",
-			"album":  "",
-			"file":   "",
-		}
-	}
-	return map[string]string{
-		"title":  song[0],
-		"artist": song[1],
-		"album":  song[2],
-		"file":   song[3],
-	}
-}
-
-func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker) error {
-	for {
-		// Wait for MPD to communicate change
-		_, err := MPDConn.Request("idle player")
-		if err != nil {
-			return err
-		}
-
-		// Get current song info
-		data, err := MPDConn.Request("currentsong")
-		if err != nil {
-			return err
-		}
-
-		// Download new cover
-		err = MPDConn.DownloadCover(data["file"], "cover")
-		if err != nil {
-			return err
-		}
-
-		// Send broadcast to all /sse clients
-		b.Publish("player update")
-	}
 }
