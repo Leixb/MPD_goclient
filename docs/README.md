@@ -1,6 +1,6 @@
 # Mininalistic MPD client
 
-##Interface
+## Interface
 
 ![UI example](example.png)
 
