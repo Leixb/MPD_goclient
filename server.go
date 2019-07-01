@@ -110,3 +110,28 @@ func main() {
 
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
+
+func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker) error {
+	for {
+		// Wait for MPD to communicate change
+		_, err := MPDConn.Request("idle player")
+		if err != nil {
+			return err
+		}
+
+		// Get current song info
+		data, err := MPDConn.Request("currentsong")
+		if err != nil {
+			return err
+		}
+
+		// Download new cover
+		err = MPDConn.DownloadCover(data["file"], "cover")
+		if err != nil {
+			return err
+		}
+
+		// Send broadcast to all /sse clients
+		b.Publish("player update")
+	}
+}
