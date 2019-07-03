@@ -2,6 +2,15 @@ window.onload = function() {
     musicUpdate(); populatePlaylist();
 }
 
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState == 'visible') {
+        console.log("Visibility changed")
+
+        musicUpdate();
+        populatePlaylist();
+    }
+});
+
 
 var eSource = new EventSource("sse");
 eSource.onmessage = function(event) {
