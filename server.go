@@ -99,6 +99,7 @@ func main() {
 
 	if !*debug {
 		gin.SetMode("release")
+		gin.DefaultWriter = ioutil.Discard
 	}
 
 	r := gin.Default()
