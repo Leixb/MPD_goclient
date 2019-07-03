@@ -1,3 +1,5 @@
+.PHONY: install
+
 MPD_goclient: bindata.go server.go
 	go build
 
@@ -7,3 +9,6 @@ bindata.go: static_files/assets/bundle.js
 static_files/assets/bundle.js:
 	 $(MAKE) -C webpack
 	 cp webpack/dist/bundle.js static_files/assets/
+
+install: MPD_goclient
+	go install
