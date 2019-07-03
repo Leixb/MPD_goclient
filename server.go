@@ -4,6 +4,7 @@ import (
 	"github.com/akamensky/argparse"
 	"github.com/gin-gonic/gin"
 	"github.com/leixb/mpdconn"
+	"github.com/zserge/webview"
 
 	"fmt"
 	"io"
@@ -180,6 +181,8 @@ func main() {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
+
+	go webview.Open("MPD client", "http://localhost:8080", 800, 600, true)
 
 	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 5 seconds.
