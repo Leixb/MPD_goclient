@@ -1,5 +1,9 @@
-MPD_goclient: assets/bundle.js
+MPD_goclient: bindata.go server.go
 	go build
-assets/bundle.js:
+
+bindata.go: static_files/assets/bundle.js
+	go-bindata static_files/...
+
+static_files/assets/bundle.js:
 	 $(MAKE) -C webpack
-	 cp webpack/dist/bundle.js assets/
+	 cp webpack/dist/bundle.js static_files/assets/

@@ -1,11 +1,21 @@
 package main
 
 import (
+	"github.com/akamensky/argparse"
 	"github.com/gin-gonic/gin"
 	"github.com/leixb/mpdconn"
+
+	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+
+	"context"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 type Broker struct {
@@ -65,16 +75,50 @@ func (b *Broker) Publish(msg interface{}) {
 }
 
 func main() {
+
+	parser := argparse.NewParser("", "HTML MPD Client")
+
+	port := parser.Int("p", "port", &argparse.Options{
+		Help:    "Port where the interface will be served",
+		Default: 8080,
+	})
+
+	MPDConnLocation := parser.String("m", "mpd-conn", &argparse.Options{
+		Help:    "Where is the mpd server located",
+		Default: "localhost:6600",
+	})
+
+	debug := parser.Flag("d", "debug", &argparse.Options{
+		Help: "Run in debug mode",
+	})
+
+	err := parser.Parse(os.Args)
+	if err != nil {
+		fmt.Print(parser.Usage(err))
+	}
+
+	if !*debug {
+		gin.SetMode("release")
+	}
+
 	r := gin.Default()
 
-	MPDConn, err := mpdconn.NewMPDconn("localhost:6600")
+	MPDConn, err := mpdconn.NewMPDconn(*MPDConnLocation)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	coverFile, err := ioutil.TempFile("", "cover")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(coverFile.Name())
+
 	b := NewBroker()
 	go b.Start()
-	go UpdateAlbum(MPDConn, b)
+	go UpdateAlbum(MPDConn, b, coverFile)
+
+	DownloadCover(MPDConn, coverFile)
 
 	r.GET("/sse", func(c *gin.Context) {
 
@@ -102,16 +146,73 @@ func main() {
 		}
 	})
 
-	r.StaticFile("/", "./web.html")
-	r.StaticFile("/cover", "./cover")
-	r.StaticFile("/web.js", "./web.js")
-	r.StaticFile("/style.css", "./style.css")
-	r.Static("/assets/", "./assets")
+	r.GET("/assets/*a", func(c *gin.Context) {
+		data, err := Asset("static_files/assets" + c.Param("a"))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		c.Data(http.StatusOK, "", data)
+	})
 
-	r.Run() // listen and serve on 0.0.0.0:8080
+	r.StaticFile("/cover", coverFile.Name())
+
+	r.GET("/", func(c *gin.Context) {
+		data, err := Asset("static_files/index.html")
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		c.Data(http.StatusOK, "", data)
+	})
+
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", *port),
+		Handler: r,
+	}
+
+	log.Printf("Serving on: localhost:%d", *port)
+
+	go func() {
+		// service connections
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 5 seconds.
+	quit := make(chan os.Signal)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be catch, so don't need add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shuting down...")
+
+	log.Println("Removing temp files...")
+	os.Remove(coverFile.Name())
+
+	log.Println("Closing MPD connection...")
+	MPDConn.Close()
+
+	log.Println("Closing server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	// catching ctx.Done(). timeout of 5 seconds.
+	select {
+	case <-ctx.Done():
+		log.Println("timeout of 5 seconds.")
+	}
+	log.Println("Done")
 }
 
-func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker) error {
+func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker, file *os.File) error {
 	for {
 		// Wait for MPD to communicate change
 		_, err := MPDConn.Request("idle player")
@@ -119,14 +220,7 @@ func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker) error {
 			return err
 		}
 
-		// Get current song info
-		data, err := MPDConn.Request("currentsong")
-		if err != nil {
-			return err
-		}
-
-		// Download new cover
-		err = MPDConn.DownloadCover(data["file"], "cover")
+		err = DownloadCover(MPDConn, file)
 		if err != nil {
 			return err
 		}
@@ -134,4 +228,20 @@ func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker) error {
 		// Send broadcast to all /sse clients
 		b.Publish("player update")
 	}
+}
+
+func DownloadCover(MPDConn *mpdconn.MPDconn, file *os.File) error {
+
+	// Get current song info
+	data, err := MPDConn.Request("currentsong")
+	if err != nil {
+		return err
+	}
+
+	// Download new cover
+	err = MPDConn.DownloadCover(data["file"], file)
+	if err != nil {
+		return err
+	}
+	return nil
 }

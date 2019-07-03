@@ -106,7 +106,7 @@ function musicUpdate() {
         document.getElementById("song-artist").innerHTML = currentsong.Artist;
         document.getElementById("song-album").innerHTML = currentsong.Album;
 
-        document.getElementById("coverimg").setAttribute("src", "cover?A=" + currentsong.Album)
+        document.getElementById("coverimg").setAttribute("src", "/cover?A=" + currentsong.Album)
 
     });
 
