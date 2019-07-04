@@ -1,1 +1,2 @@
-./static_files/assets/* linguist-vendored
+static_files/assets/fawesome/* linguist-vendored
+static_files/assets/bootstrap-4.0.0-dist/css/* linguist-vendored
