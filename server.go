@@ -164,7 +164,16 @@ func main() {
 			log.Println(err)
 			return
 		}
-		c.Data(http.StatusOK, "", data)
+		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+	})
+
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		data, err := Asset("static_files/favicon.ico")
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		c.Data(http.StatusOK, "image/x-icon", data)
 	})
 
 	srv := &http.Server{
