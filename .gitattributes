@@ -1,2 +1,3 @@
 static_files/assets/fawesome/* linguist-vendored
 static_files/assets/bootstrap-4.0.0-dist/css/* linguist-vendored
+static_files/assets/bundle.min.js linguist-vendored
