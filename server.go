@@ -142,15 +142,17 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err,
 			})
-		} else {
-			c.JSON(http.StatusOK, data)
+			return
 		}
+		c.JSON(http.StatusOK, data)
 	})
 
 	r.GET("/assets/*a", func(c *gin.Context) {
 		data, err := Asset("static_files/assets" + c.Param("a"))
 		if err != nil {
-			log.Println(err)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err,
+			})
 			return
 		}
 		c.Data(http.StatusOK, "", data)
@@ -161,7 +163,9 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		data, err := Asset("static_files/index.html")
 		if err != nil {
-			log.Println(err)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err,
+			})
 			return
 		}
 		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
@@ -170,7 +174,9 @@ func main() {
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		data, err := Asset("static_files/favicon.ico")
 		if err != nil {
-			log.Println(err)
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err,
+			})
 			return
 		}
 		c.Data(http.StatusOK, "image/x-icon", data)
