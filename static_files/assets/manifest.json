@@ -1,0 +1,22 @@
+{
+  "short_name": "MPD Client",
+  "name": "MPD Client",
+  "icons": [
+    {
+      "src": "/assets/icons/mpd-192px.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/assets/icons/mpd-512px.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#6c757d",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#343a40"
+}
+
