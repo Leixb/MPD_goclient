@@ -3,12 +3,8 @@
 MPD_goclient: bindata.go server.go
 	go build
 
-bindata.go: static_files/assets/bundle.js
+bindata.go:
 	go-bindata static_files/...
 
-static_files/assets/bundle.js:
-	 $(MAKE) -C webpack
-	 cp webpack/dist/bundle.js static_files/assets/
-
-install: MPD_goclient
+install: bindata.go server.go
 	go install
