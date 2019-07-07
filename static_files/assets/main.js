@@ -1,10 +1,10 @@
 window.onload = function() {
     musicUpdate(); populatePlaylist();
-}
+};
 
 document.addEventListener("visibilitychange", function() {
     if (document.visibilityState == 'visible') {
-        console.log("Visibility changed")
+        console.log("Visibility changed");
 
         musicUpdate();
         populatePlaylist();
@@ -53,7 +53,7 @@ function musicToggle() {
         } else {
             fetch('/mpd/pause 0');
         }
-    })
+    });
 }
 
 function musicRandom() {
@@ -65,7 +65,7 @@ function musicRandom() {
         }
         document.getElementById("random").style.opacity =
             ((mpdstatus.random == "1")? "0.3" : "1");
-    })
+    });
 }
 
 function musicConsume() {
@@ -77,7 +77,7 @@ function musicConsume() {
         }
         document.getElementById("consume").style.opacity =
             ((mpdstatus.consume == "1")? "0.3" : "1");
-    })
+    });
 }
 
 function musicRepeat() {
@@ -90,7 +90,7 @@ function musicRepeat() {
 
         document.getElementById("repeat").style.opacity =
             ((mpdstatus.repeat == "1")? "0.3" : "1");
-    })
+    });
 }
 
 function musicPrev() {
@@ -99,13 +99,13 @@ function musicPrev() {
 
 function getCurrentSong() {
     return fetch('/mpd/currentsong').then(response => {
-        return response.json()
-    })
+        return response.json();
+    });
 }
 function getStatus() {
     return fetch('/mpd/status').then(response => {
-        return response.json()
-    })
+        return response.json();
+    });
 }
 
 function musicUpdate() {
@@ -115,7 +115,7 @@ function musicUpdate() {
         document.getElementById("song-artist").innerHTML = currentsong.Artist;
         document.getElementById("song-album").innerHTML = currentsong.Album;
 
-        document.getElementById("coverimg").setAttribute("src", "/cover?A=" + currentsong.Album)
+        document.getElementById("coverimg").setAttribute("src", "/cover?A=" + currentsong.Album);
 
     });
 
@@ -144,7 +144,7 @@ function musicUpdate() {
 
             document.getElementById("repeat").style.opacity =
                 ((mpdstatus.repeat == "1")? "1" : "0.3");
-        })
+        });
     });
 }
 
@@ -160,11 +160,11 @@ function populatePlaylist() {
 
                 var list = document.createElement('ul');
 
-                list.className = "list-group"
+                list.className = "list-group";
 
-                var data_list = new Array(data.length)
+                var data_list = new Array(data.length);
 
-                for (elem in data) {
+                for (var elem in data) {
                     data_list[parseInt(elem)] = data[elem];
                 }
 
@@ -201,7 +201,7 @@ function populatePlaylist() {
 
                 playlist_parent.removeChild(playlist_old);
 
-            })
-        })
+            });
+        });
     });
 }
