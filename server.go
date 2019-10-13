@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/Leixb/mpdconn"
 	"github.com/akamensky/argparse"
 	"github.com/gin-gonic/gin"
-	"github.com/leixb/mpdconn"
 
 	"fmt"
 	"io"
@@ -18,15 +18,15 @@ import (
 	"time"
 )
 
-type Broker struct {
+type broker struct {
 	stopCh    chan struct{}
 	publishCh chan interface{}
 	subCh     chan chan interface{}
 	unsubCh   chan chan interface{}
 }
 
-func NewBroker() *Broker {
-	return &Broker{
+func newbroker() *broker {
+	return &broker{
 		stopCh:    make(chan struct{}),
 		publishCh: make(chan interface{}, 1),
 		subCh:     make(chan chan interface{}, 1),
@@ -34,7 +34,7 @@ func NewBroker() *Broker {
 	}
 }
 
-func (b *Broker) Start() {
+func (b *broker) Start() {
 	subs := map[chan interface{}]struct{}{}
 	for {
 		select {
@@ -56,21 +56,21 @@ func (b *Broker) Start() {
 	}
 }
 
-func (b *Broker) Stop() {
+func (b *broker) Stop() {
 	close(b.stopCh)
 }
 
-func (b *Broker) Subscribe() chan interface{} {
+func (b *broker) Subscribe() chan interface{} {
 	msgCh := make(chan interface{}, 5)
 	b.subCh <- msgCh
 	return msgCh
 }
 
-func (b *Broker) Unsubscribe(msgCh chan interface{}) {
+func (b *broker) Unsubscribe(msgCh chan interface{}) {
 	b.unsubCh <- msgCh
 }
 
-func (b *Broker) Publish(msg interface{}) {
+func (b *broker) Publish(msg interface{}) {
 	b.publishCh <- msg
 }
 
@@ -104,7 +104,7 @@ func main() {
 
 	r := gin.Default()
 
-	MPDConn, err := mpdconn.NewMPDconn(*MPDConnLocation)
+	MPDConn, err := mpdconn.NewMpdConn(*MPDConnLocation)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,11 +115,11 @@ func main() {
 	}
 	defer os.Remove(coverFile.Name())
 
-	b := NewBroker()
+	b := newbroker()
 	go b.Start()
-	go UpdateAlbum(MPDConn, b, coverFile)
+	go updateAlbum(MPDConn, b, coverFile)
 
-	DownloadCover(MPDConn, coverFile)
+	downloadCover(MPDConn, coverFile)
 
 	r.GET("/sse", func(c *gin.Context) {
 
@@ -210,11 +210,7 @@ func main() {
 	log.Println("Removing temp files...")
 	os.Remove(coverFile.Name())
 
-	log.Println("Closing MPD connection...")
-	MPDConn.Close()
-
 	log.Println("Closing server...")
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
@@ -228,7 +224,7 @@ func main() {
 	log.Println("Done")
 }
 
-func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker, file *os.File) error {
+func updateAlbum(MPDConn *mpdconn.MpdConn, b *broker, file *os.File) error {
 	for {
 		// Wait for MPD to communicate change
 		_, err := MPDConn.Request("idle player")
@@ -236,7 +232,7 @@ func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker, file *os.File) error {
 			return err
 		}
 
-		err = DownloadCover(MPDConn, file)
+		err = downloadCover(MPDConn, file)
 		if err != nil {
 			return err
 		}
@@ -246,7 +242,7 @@ func UpdateAlbum(MPDConn *mpdconn.MPDconn, b *Broker, file *os.File) error {
 	}
 }
 
-func DownloadCover(MPDConn *mpdconn.MPDconn, file *os.File) error {
+func downloadCover(MPDConn *mpdconn.MpdConn, file *os.File) error {
 
 	// Get current song info
 	data, err := MPDConn.Request("currentsong")
