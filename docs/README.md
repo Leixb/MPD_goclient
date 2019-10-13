@@ -20,4 +20,4 @@ $ go get -u github.com/akamensky/argparse
 
 ## Install
 
-Simply install the dependencies with `go get ./..` and run `make install`
+Run `make deps` and then `make install`
