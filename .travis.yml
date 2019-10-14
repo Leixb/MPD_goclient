@@ -7,9 +7,6 @@ before_install:
   - make deps
   - if [ -n "$TRAVIS_TAG" ]; then go get github.com/mitchellh/gox; fi
 
-install:
-  - # skip
-
 script:
   - go get -t -v ./...
   - diff -u <(echo -n) <(gofmt -d .)
