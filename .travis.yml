@@ -4,6 +4,7 @@ env:
   - PROG=MPD_goclient
 
 before_install:
+  - make deps
   - if [ -n "$TRAVIS_TAG" ]; then go get github.com/mitchellh/gox; fi
 
 install:
