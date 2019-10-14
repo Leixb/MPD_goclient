@@ -7,7 +7,11 @@ before_install:
   - make deps
   - if [ -n "$TRAVIS_TAG" ]; then go get github.com/mitchellh/gox; fi
 
+install:
+  - #skip
+
 script:
+  - make bindata.go
   - go get -t -v ./...
   - diff -u <(echo -n) <(gofmt -d .)
   - go vet $(go list ./... | grep -v /vendor/)
