@@ -131,7 +131,6 @@ function populatePlaylist() {
 
                         item.className = "list-group-item";
                         item.setAttribute("onclick", "playsong('" + songNum + "')");
-                        item.setAttribute("onclick", "playsong('" + songNum + "')");
                         item.addEventListener("mousedown", function(e){ e.preventDefault(); }, false);
 
                         if (songNum === parseInt(mpdstatus.song, 10)) {
