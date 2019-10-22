@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/Leixb/mpdconn"
+
 	"github.com/akamensky/argparse"
 	"github.com/gin-gonic/gin"
+	"github.com/grafov/bcast"
 
 	"fmt"
 	"io"
@@ -18,63 +20,15 @@ import (
 	"time"
 )
 
-type broker struct {
-	stopCh    chan struct{}
-	publishCh chan interface{}
-	subCh     chan chan interface{}
-	unsubCh   chan chan interface{}
-}
-
-func newbroker() *broker {
-	return &broker{
-		stopCh:    make(chan struct{}),
-		publishCh: make(chan interface{}, 1),
-		subCh:     make(chan chan interface{}, 1),
-		unsubCh:   make(chan chan interface{}, 1),
-	}
-}
-
-func (b *broker) Start() {
-	subs := map[chan interface{}]struct{}{}
-	for {
-		select {
-		case <-b.stopCh:
-			return
-		case msgCh := <-b.subCh:
-			subs[msgCh] = struct{}{}
-		case msgCh := <-b.unsubCh:
-			delete(subs, msgCh)
-		case msg := <-b.publishCh:
-			for msgCh := range subs {
-				// msgCh is buffered, use non-blocking send to protect the broker:
-				select {
-				case msgCh <- msg:
-				default:
-				}
-			}
-		}
-	}
-}
-
-func (b *broker) Stop() {
-	close(b.stopCh)
-}
-
-func (b *broker) Subscribe() chan interface{} {
-	msgCh := make(chan interface{}, 5)
-	b.subCh <- msgCh
-	return msgCh
-}
-
-func (b *broker) Unsubscribe(msgCh chan interface{}) {
-	b.unsubCh <- msgCh
-}
-
-func (b *broker) Publish(msg interface{}) {
-	b.publishCh <- msg
+type appContext struct {
+	updateGroup *bcast.Group
 }
 
 func main() {
+
+	group := bcast.NewGroup()
+	go group.Broadcast(0)
+	app := appContext{group}
 
 	parser := argparse.NewParser("", "HTML MPD Client")
 
@@ -115,23 +69,17 @@ func main() {
 	}
 	defer os.Remove(coverFile.Name())
 
-	b := newbroker()
-	go b.Start()
-	go updateAlbum(MPDConn, b, coverFile)
+	go app.updateAlbum(MPDConn, coverFile)
 
 	downloadCover(MPDConn, coverFile)
 
 	r.GET("/sse", func(c *gin.Context) {
-
-		clientStream := b.Subscribe()
-		defer b.Unsubscribe(clientStream)
-
+		recv := app.updateGroup.Join()
+		defer recv.Close()
 		c.Stream(func(w io.Writer) bool {
-			if msg, ok := <-clientStream; ok {
-				c.SSEvent("message", msg)
-				return true
-			}
-			return false
+			event := recv.Recv()
+			c.SSEvent("message", event)
+			return true
 		})
 	})
 
@@ -224,7 +172,7 @@ func main() {
 	log.Println("Done")
 }
 
-func updateAlbum(MPDConn *mpdconn.MpdConn, b *broker, file *os.File) error {
+func (app *appContext) updateAlbum(MPDConn *mpdconn.MpdConn, file *os.File) error {
 	for {
 		// Wait for MPD to communicate change
 		_, err := MPDConn.Request("idle player")
@@ -238,7 +186,7 @@ func updateAlbum(MPDConn *mpdconn.MpdConn, b *broker, file *os.File) error {
 		}
 
 		// Send broadcast to all /sse clients
-		b.Publish("player update")
+		app.updateGroup.Send("player update")
 	}
 }
 
