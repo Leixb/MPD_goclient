@@ -1,7 +1,7 @@
-function mixPlaylist() {
-    fetch("/mpd/shuffle");
-    musicUpdate();
-    populatePlaylist();
+function getStatus() {
+    return fetch("/mpd/status").then((response) => {
+        return response.json();
+    });
 }
 
 function musicNext() {
@@ -26,32 +26,32 @@ function musicRandom() {
             fetch("/mpd/random 1");
         }
         document.getElementById("random").style.opacity =
-            ((mpdstatus.random == "1")? "0.3" : "1");
+            ((mpdstatus.random === "1")? "0.3" : "1");
     });
 }
 
 function musicConsume() {
     getStatus().then((mpdstatus) => {
-        if (mpdstatus.consume == "1") {
+        if (mpdstatus.consume === "1") {
             fetch("/mpd/consume 0");
         } else {
             fetch("/mpd/consume 1");
         }
         document.getElementById("consume").style.opacity =
-            ((mpdstatus.consume == "1")? "0.3" : "1");
+            ((mpdstatus.consume === "1")? "0.3" : "1");
     });
 }
 
 function musicRepeat() {
     getStatus().then((mpdstatus) => {
-        if (mpdstatus.repeat == "1") {
+        if (mpdstatus.repeat === "1") {
             fetch("/mpd/repeat 0");
         } else {
             fetch("/mpd/repeat 1");
         }
 
         document.getElementById("repeat").style.opacity =
-            ((mpdstatus.repeat == "1")? "0.3" : "1");
+            ((mpdstatus.repeat === "1")? "0.3" : "1");
     });
 }
 
@@ -61,11 +61,6 @@ function musicPrev() {
 
 function getCurrentSong() {
     return fetch("/mpd/currentsong").then((response) => {
-        return response.json();
-    });
-}
-function getStatus() {
-    return fetch("/mpd/status").then((response) => {
         return response.json();
     });
 }
@@ -90,7 +85,7 @@ function musicUpdate() {
             });
 
             var play = document.getElementById("toggle").firstChild;
-            if (mpdstatus.state == "play") {
+            if (mpdstatus.state === "play") {
                 play.classList.add("fa-pause");
                 play.classList.remove("fa-play");
             } else {
@@ -99,13 +94,13 @@ function musicUpdate() {
             }
 
             document.getElementById("random").style.opacity =
-                ((mpdstatus.random == "1")? "1" : "0.3");
+                ((mpdstatus.random === "1")? "1" : "0.3");
 
             document.getElementById("consume").style.opacity =
-                ((mpdstatus.consume == "1")? "1" : "0.3");
+                ((mpdstatus.consume === "1")? "1" : "0.3");
 
             document.getElementById("repeat").style.opacity =
-                ((mpdstatus.repeat == "1")? "1" : "0.3");
+                ((mpdstatus.repeat === "1")? "1" : "0.3");
         });
     });
 }
@@ -124,19 +119,21 @@ function populatePlaylist() {
 
                 list.className = "list-group";
 
-                var data_list = new Array(data.length);
+                var dataList = new Array(data.length);
 
                 for (var elem in data) {
-                    data_list[parseInt(elem, 10)] = data[elem];
+                    if ({}.hasOwnProperty.call(data, elem)) {
+                        dataList[parseInt(elem, 10)] = data[parseInt(elem, 10)];
+                    }
                 }
 
-                for (var i=0; i < data_list.length; ++i) {
+                for (var i=0; i < dataList.length; ++i) {
 
 
                     var item = document.createElement("li");
 
                     item.appendChild(document.createTextNode(
-                        data_list[i].replace(/\.[^/.]+$/, "").replace(/\//g, " - "
+                        dataList[i].replace(/\.[^/.]+$/, "").replace(/\//g, " - "
                         )));
 
                     item.className = "list-group-item";
@@ -144,7 +141,7 @@ function populatePlaylist() {
                     item.setAttribute("onclick", "playsong('" + i + "')");
                     item.addEventListener("mousedown", function(e){ e.preventDefault(); }, false);
 
-                    if (i == mpdstatus.song) {
+                    if (i === mpdstatus.song) {
                         item.className = "list-group-item active";
                     }
 
@@ -152,20 +149,26 @@ function populatePlaylist() {
 
                 }
 
-                var playlist_old = document.getElementById("playlist");
+                var PlaylistOld = document.getElementById("playlist");
 
-                var playlist_parent = playlist_old.parentNode;
+                var PlaylistParent = PlaylistOld.parentNode;
 
-                var playlist_new = document.createElement("div");
-                playlist_new.id = "playlist";
-                playlist_new.appendChild(list);
-                playlist_parent.insertBefore(playlist_new, playlist_old);
+                var PlaylistNew = document.createElement("div");
+                PlaylistNew.id = "playlist";
+                PlaylistNew.appendChild(list);
+                PlaylistParent.insertBefore(PlaylistNew, PlaylistOld);
 
-                playlist_parent.removeChild(playlist_old);
+                PlaylistParent.removeChild(PlaylistOld);
 
             });
         });
     });
+}
+
+function mixPlaylist() {
+    fetch("/mpd/shuffle");
+    musicUpdate();
+    populatePlaylist();
 }
 
 window.onload = function() {
