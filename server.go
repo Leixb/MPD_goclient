@@ -177,12 +177,12 @@ func (app *appContext) updateAlbum(MPDConn *mpdconn.MpdConn, file *os.File) erro
 		// Wait for MPD to communicate change
 		_, err := MPDConn.Request("idle player")
 		if err != nil {
-			return err
+			fmt.Println(err)
 		}
 
 		err = downloadCover(MPDConn, file)
 		if err != nil {
-			return err
+			fmt.Println(err)
 		}
 
 		// Send broadcast to all /sse clients
