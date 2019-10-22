@@ -119,34 +119,27 @@ function populatePlaylist() {
 
                 list.className = "list-group";
 
-                var dataList = new Array(data.length);
-
                 for (var elem in data) {
                     if ({}.hasOwnProperty.call(data, elem)) {
-                        dataList[parseInt(elem, 10)] = data[parseInt(elem, 10)];
+                        var item = document.createElement("li");
+
+                        item.appendChild(document.createTextNode(
+                            data[elem].replace(/\.[^/.]+$/, "").replace(/\//g, " - "
+                            )));
+
+                        var songNum = parseInt(elem, 10);
+
+                        item.className = "list-group-item";
+                        item.setAttribute("onclick", "playsong('" + songNum + "')");
+                        item.setAttribute("onclick", "playsong('" + songNum + "')");
+                        item.addEventListener("mousedown", function(e){ e.preventDefault(); }, false);
+
+                        if (songNum === parseInt(mpdstatus.song, 10)) {
+                            item.className = "list-group-item active";
+                        }
+
+                        list.appendChild(item);
                     }
-                }
-
-                for (var i=0; i < dataList.length; ++i) {
-
-
-                    var item = document.createElement("li");
-
-                    item.appendChild(document.createTextNode(
-                        dataList[i].replace(/\.[^/.]+$/, "").replace(/\//g, " - "
-                        )));
-
-                    item.className = "list-group-item";
-                    item.setAttribute("onclick", "playsong('" + i + "')");
-                    item.setAttribute("onclick", "playsong('" + i + "')");
-                    item.addEventListener("mousedown", function(e){ e.preventDefault(); }, false);
-
-                    if (i === mpdstatus.song) {
-                        item.className = "list-group-item active";
-                    }
-
-                    list.appendChild(item);
-
                 }
 
                 var PlaylistOld = document.getElementById("playlist");
