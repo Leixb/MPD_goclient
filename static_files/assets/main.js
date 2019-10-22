@@ -1,67 +1,29 @@
-window.onload = function() {
-    musicUpdate(); populatePlaylist();
-};
-
-document.addEventListener("visibilitychange", function() {
-    if (document.visibilityState == 'visible') {
-        console.log("Visibility changed");
-
-        musicUpdate();
-        populatePlaylist();
-    }
-});
-
-
-var eSource = new EventSource("sse");
-eSource.onmessage = function(event) {
-    musicUpdate();
-    populatePlaylist();
-};
-
-window.onbeforeunload = function() {
-    eSource.close();
-};
-
-document.getElementById("prev").addEventListener("click", musicPrev);
-document.getElementById("toggle").addEventListener("click", musicToggle);
-document.getElementById("next").addEventListener("click", musicNext);
-
-document.getElementById("next-song").addEventListener("click", musicNext);
-document.getElementById("next-song").addEventListener('mousedown', function(e){ e.preventDefault(); }, false);
-
-document.getElementById("coverimg").addEventListener("click", musicToggle);
-
-document.getElementById("repeat").addEventListener("click", musicRepeat);
-document.getElementById("consume").addEventListener("click", musicConsume);
-document.getElementById("random").addEventListener("click", musicRandom);
-
-document.getElementById("shuf-play").addEventListener("click", mixPlaylist);
-
 function mixPlaylist() {
-    fetch('/mpd/shuffle');
+    fetch("/mpd/shuffle");
     musicUpdate();
     populatePlaylist();
 }
 
 function musicNext() {
-    fetch('/mpd/next');
+    fetch("/mpd/next");
 }
+
 function musicToggle() {
-    getStatus().then(mpdstatus => {
-        if (mpdstatus.state == "play") {
-            fetch('/mpd/pause 1');
+    getStatus().then((mpdstatus) => {
+        if (mpdstatus.state === "play") {
+            fetch("/mpd/pause 1");
         } else {
-            fetch('/mpd/pause 0');
+            fetch("/mpd/pause 0");
         }
     });
 }
 
 function musicRandom() {
-    getStatus().then(mpdstatus => {
-        if (mpdstatus.random == "1") {
-            fetch('/mpd/random 0');
+    getStatus().then((mpdstatus) => {
+        if (mpdstatus.random === "1") {
+            fetch("/mpd/random 0");
         } else {
-            fetch('/mpd/random 1');
+            fetch("/mpd/random 1");
         }
         document.getElementById("random").style.opacity =
             ((mpdstatus.random == "1")? "0.3" : "1");
@@ -69,11 +31,11 @@ function musicRandom() {
 }
 
 function musicConsume() {
-    getStatus().then(mpdstatus => {
+    getStatus().then((mpdstatus) => {
         if (mpdstatus.consume == "1") {
-            fetch('/mpd/consume 0');
+            fetch("/mpd/consume 0");
         } else {
-            fetch('/mpd/consume 1');
+            fetch("/mpd/consume 1");
         }
         document.getElementById("consume").style.opacity =
             ((mpdstatus.consume == "1")? "0.3" : "1");
@@ -81,11 +43,11 @@ function musicConsume() {
 }
 
 function musicRepeat() {
-    getStatus().then(mpdstatus => {
+    getStatus().then((mpdstatus) => {
         if (mpdstatus.repeat == "1") {
-            fetch('/mpd/repeat 0');
+            fetch("/mpd/repeat 0");
         } else {
-            fetch('/mpd/repeat 1');
+            fetch("/mpd/repeat 1");
         }
 
         document.getElementById("repeat").style.opacity =
@@ -94,37 +56,37 @@ function musicRepeat() {
 }
 
 function musicPrev() {
-    fetch('/mpd/previous');
+    fetch("/mpd/previous");
 }
 
 function getCurrentSong() {
-    return fetch('/mpd/currentsong').then(response => {
+    return fetch("/mpd/currentsong").then((response) => {
         return response.json();
     });
 }
 function getStatus() {
-    return fetch('/mpd/status').then(response => {
+    return fetch("/mpd/status").then((response) => {
         return response.json();
     });
 }
 
 function musicUpdate() {
 
-    getCurrentSong().then(currentsong => {
-        document.getElementById("song-title").innerHTML = currentsong.Title;
-        document.getElementById("song-artist").innerHTML = currentsong.Artist;
-        document.getElementById("song-album").innerHTML = currentsong.Album;
+    getCurrentSong().then((currentsong) => {
+        document.getElementById("song-title").textContent = currentsong.Title;
+        document.getElementById("song-artist").textContent = currentsong.Artist;
+        document.getElementById("song-album").textContent = currentsong.Album;
 
         document.getElementById("coverimg").setAttribute("src", "/cover?A=" + currentsong.Album);
 
     });
 
-    getStatus().then(mpdstatus => {
-        fetch('/mpd/playlistid ' + mpdstatus.nextsongid).then(response => {
-            response.json().then(data => {
-                document.getElementById("song-title-next").innerHTML = data.Title;
-                document.getElementById("song-artist-next").innerHTML = data.Artist;
-                document.getElementById("song-album-next").innerHTML = data.Album;
+    getStatus().then((mpdstatus) => {
+        fetch("/mpd/playlistid " + mpdstatus.nextsongid).then((response) => {
+            response.json().then((data) => {
+                document.getElementById("song-title-next").textContent = data.Title;
+                document.getElementById("song-artist-next").textContent = data.Artist;
+                document.getElementById("song-album-next").textContent = data.Album;
             });
 
             var play = document.getElementById("toggle").firstChild;
@@ -149,29 +111,29 @@ function musicUpdate() {
 }
 
 function playsong(songid) {
-    fetch('/mpd/play ' + songid);
+    fetch("/mpd/play " + songid);
 }
 
 function populatePlaylist() {
 
-    getStatus().then(mpdstatus => {
-        fetch('/mpd/playlist').then(response => {
-            response.json().then(data => {
+    getStatus().then((mpdstatus) => {
+        fetch("/mpd/playlist").then((response) => {
+            response.json().then((data) => {
 
-                var list = document.createElement('ul');
+                var list = document.createElement("ul");
 
                 list.className = "list-group";
 
                 var data_list = new Array(data.length);
 
                 for (var elem in data) {
-                    data_list[parseInt(elem)] = data[elem];
+                    data_list[parseInt(elem, 10)] = data[elem];
                 }
 
                 for (var i=0; i < data_list.length; ++i) {
 
 
-                    var item = document.createElement('li');
+                    var item = document.createElement("li");
 
                     item.appendChild(document.createTextNode(
                         data_list[i].replace(/\.[^/.]+$/, "").replace(/\//g, " - "
@@ -180,7 +142,7 @@ function populatePlaylist() {
                     item.className = "list-group-item";
                     item.setAttribute("onclick", "playsong('" + i + "')");
                     item.setAttribute("onclick", "playsong('" + i + "')");
-                    item.addEventListener('mousedown', function(e){ e.preventDefault(); }, false);
+                    item.addEventListener("mousedown", function(e){ e.preventDefault(); }, false);
 
                     if (i == mpdstatus.song) {
                         item.className = "list-group-item active";
@@ -190,11 +152,11 @@ function populatePlaylist() {
 
                 }
 
-                var playlist_old = document.getElementById('playlist');
+                var playlist_old = document.getElementById("playlist");
 
                 var playlist_parent = playlist_old.parentNode;
 
-                var playlist_new = document.createElement('div');
+                var playlist_new = document.createElement("div");
                 playlist_new.id = "playlist";
                 playlist_new.appendChild(list);
                 playlist_parent.insertBefore(playlist_new, playlist_old);
@@ -205,3 +167,43 @@ function populatePlaylist() {
         });
     });
 }
+
+window.onload = function() {
+    musicUpdate();
+    populatePlaylist();
+};
+
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === "visible") {
+        //console.log("Visibility changed");
+
+        musicUpdate();
+        populatePlaylist();
+    }
+});
+
+
+var eSource = new EventSource("sse");
+eSource.onmessage = function(event) {
+    musicUpdate();
+    populatePlaylist();
+};
+
+window.onbeforeunload = function() {
+    eSource.close();
+};
+
+document.getElementById("prev").addEventListener("click", musicPrev);
+document.getElementById("toggle").addEventListener("click", musicToggle);
+document.getElementById("next").addEventListener("click", musicNext);
+
+document.getElementById("next-song").addEventListener("click", musicNext);
+document.getElementById("next-song").addEventListener("mousedown", function(e){ e.preventDefault(); }, false);
+
+document.getElementById("coverimg").addEventListener("click", musicToggle);
+
+document.getElementById("repeat").addEventListener("click", musicRepeat);
+document.getElementById("consume").addEventListener("click", musicConsume);
+document.getElementById("random").addEventListener("click", musicRandom);
+
+document.getElementById("shuf-play").addEventListener("click", mixPlaylist);
