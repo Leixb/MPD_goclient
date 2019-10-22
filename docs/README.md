@@ -12,12 +12,12 @@
 
 ## Dependencies:
 
+Go-bindata is needed. (you can run this command with`make deps`).
+
 ```sh
-$ go get -u github.com/Leixb/mpdconn
-$ go get -u github.com/gin-gonic/gin
-$ go get -u github.com/akamensky/argparse
+go get -u github.com/go-bindata/go-bindata/...
 ```
 
 ## Install
 
-Run `make deps` and then `make install`
+Make sure go-bindata is installed (`make deps`) and run `make install`
