@@ -1,4 +1,4 @@
-.PHONY: install
+.PHONY: install deps
 
 MPD_goclient: bindata.go server.go
 	go build
@@ -11,6 +11,3 @@ install: bindata.go server.go
 
 deps:
 	go get -u github.com/go-bindata/go-bindata/...
-	go get -u github.com/Leixb/mpdconn
-	go get -u github.com/gin-gonic/gin
-	go get -u github.com/akamensky/argparse
