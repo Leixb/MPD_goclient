@@ -18,18 +18,6 @@ function musicToggle() {
     });
 }
 
-function musicRandom() {
-    getStatus().then((mpdstatus) => {
-        if (mpdstatus.random === "1") {
-            fetch("/mpd/random 0");
-        } else {
-            fetch("/mpd/random 1");
-        }
-        document.getElementById("random").style.opacity =
-            ((mpdstatus.random === "1")? "0.3" : "1");
-    });
-}
-
 function musicConsume() {
     getStatus().then((mpdstatus) => {
         if (mpdstatus.consume === "1") {
@@ -103,6 +91,19 @@ function musicUpdate() {
                 ((mpdstatus.repeat === "1")? "1" : "0.3");
         });
     });
+}
+
+function musicRandom() {
+    getStatus().then((mpdstatus) => {
+        if (mpdstatus.random === "1") {
+            fetch("/mpd/random 0");
+        } else {
+            fetch("/mpd/random 1");
+        }
+        document.getElementById("random").style.opacity =
+            ((mpdstatus.random === "1")? "0.3" : "1");
+    });
+    musicUpdate();
 }
 
 function playsong(songid) {
