@@ -1,0 +1,33 @@
+language: go
+sudo: false
+env:
+  - PROG=MPD_goclient
+
+before_install:
+  - make deps
+  - if [ -n "$TRAVIS_TAG" ]; then go get github.com/mitchellh/gox; fi
+
+install:
+  - #skip
+
+script:
+  - make bindata.go
+  - go get -t -v ./...
+  - diff -u <(echo -n) <(gofmt -d .)
+  - go vet $(go list ./... | grep -v /vendor/)
+  - go test -v -race ./...
+    # Only run gox on tagged commits
+  -  if [ -n "$TRAVIS_TAG" ]; then gox -os="linux darwin windows" -arch="amd64" -output="${PROG}.{{.OS}}.{{.Arch}}" -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose ./... ; fi
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: 05WKfsBZMxFI/JqrC6WbAKyI9OOh2ryW3KxVVJdGQN4ZJwxJlbR6T4V3ueG/nHZwq1yaRa4x/rAQjziEmS1gac4/ynt4s3MGN7XrFb+ds4nPRBWjSYKach6Zu6ow6+XYnlQYPjJohupPpimAM4/G47ryEpis+fWHW5s+xqCQGNnkV34yN7QUsMdfk/KK/B/sKeSlqaSQeLWCRDRaHxxHBX630NCdTe713mEsdLWR56wP8rthQrhTVSk5dZRKE+GcmbJrrJsexQMkht1/us0DBfIPTvWtMmTcU3vDRsOvPJhyBWJw8uQmws+6GPLr0VoAk9FHRdDXYE21n3H4wcjYQAwqm1Ui7ca70bb6FjvA8rkIArj/1P8lvp2rO9t3B0+dWjw5dgHNNO0AwAGUeX909SOIOKijMMNLMmEncWUhpmc9wMaZTZDbK6J79g8o0nUdf1Mx3ozSfkrkMOdVczafrD6LUTvbXNs81EXzTFd5PYeMrM+m7bEHR4ugHqlhHb8MKjxpHC0/xQBJnluNvqnZEcgah5XKhJYj6NotO7WIlXQCODXszik6tVasAA+ZyYbDbP8mAMpd9CAOP2gIZ4lt2bywxDQUHusk06DdOqTLAUfGeoXkUyPHk66mCoCUsi+ZciOtIvmR59B7te2TPXRlopuI+ZLNrJS3zmF6gaEyxgk=
+  file:
+    - "${PROG}.windows.amd64.exe"
+    - "${PROG}.darwin.amd64"
+    - "${PROG}.linux.amd64"
+  on:
+    repo: Leixb/MPD_goclient
+    tags: true
