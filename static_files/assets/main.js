@@ -134,7 +134,7 @@ function populatePlaylist() {
                 list.className = "list-group";
 
                 for (var elem in orderedData) {
-                    if ({}.hasOwnProperty.call(orderedData, elem)) {
+                    if (orderedData.hasOwnProperty(elem)) {
                         var item = document.createElement("li");
 
                         item.appendChild(document.createTextNode(
