@@ -16,13 +16,12 @@ import (
 
 	"context"
 	"os/signal"
-	"syscall"
 	"time"
 )
 
 type appContext struct {
 	updateGroup *bcast.Group
-	stop        chan bool
+	stop        chan struct{}
 	MPDConn     *mpdconn.MpdConn
 	coverFile   *os.File
 }
@@ -31,7 +30,7 @@ func main() {
 
 	group := bcast.NewGroup()
 	go group.Broadcast(0)
-	app := appContext{group, make(chan bool), nil, nil}
+	app := appContext{group, make(chan struct{}), nil, nil}
 
 	parser := argparse.NewParser("", "HTML MPD Client")
 
@@ -79,10 +78,14 @@ func main() {
 	r.GET("/sse", func(c *gin.Context) {
 		recv := app.updateGroup.Join()
 		defer recv.Close()
+
 		c.Stream(func(w io.Writer) bool {
 			event := recv.Recv()
-			c.SSEvent("message", event)
-			return true
+			if event == "update" {
+				c.SSEvent("message", event)
+				return true
+			}
+			return false
 		})
 	})
 
@@ -150,39 +153,32 @@ func main() {
 	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 5 seconds.
 	quit := make(chan os.Signal)
-	// kill (no param) default send syscall.SIGTERM
-	// kill -2 is syscall.SIGINT
-	// kill -9 is syscall.SIGKILL but can't be catch, so don't need add it
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, os.Interrupt)
 	<-quit
 
 	log.Println("Shuting down...")
 
-	app.stop <- true
+	app.stop <- struct{}{}       // Stop mpd monitor of changed
+	app.updateGroup.Send("quit") // Stop sse connections
 
-	log.Println("Closing server...")
+	// Stop server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
-	// catching ctx.Done(). timeout of 5 seconds.
-	select {
-	case <-ctx.Done():
-		log.Println("timeout of 5 seconds.")
-	}
-	log.Println("Done")
 }
 
 func (app *appContext) updateAlbum() error {
-	update := make(chan bool)
+	update := make(chan struct{})
 	go func() {
 		for {
 			_, err := app.MPDConn.Request("idle player")
 			if err != nil {
 				fmt.Println(err)
 			}
-			update <- true
+			update <- struct{}{}
 		}
 	}()
 
@@ -194,7 +190,7 @@ func (app *appContext) updateAlbum() error {
 				fmt.Println(err)
 			}
 			// Send broadcast to all /sse clients
-			app.updateGroup.Send("player update")
+			app.updateGroup.Send("update")
 		case <-app.stop:
 			return nil
 		}
