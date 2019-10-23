@@ -116,12 +116,27 @@ function populatePlaylist() {
         fetch("/mpd/playlist").then((response) => {
             response.json().then((data) => {
 
+
+                const orderedData = {};
+                Object.keys(data).sort(function(a, b) {
+                    aI = parseInt(a, 10);
+                    bI = parseInt(b, 10);
+                    if (aI > bI) {
+                        return 1;
+                    } else if ( aI < bI ) {
+                        return -1;
+                    }
+                    return 0;
+                }).forEach(function(key) {
+                    orderedData[key] = data[key];
+                });
+
                 var list = document.createElement("ul");
 
                 list.className = "list-group";
 
-                for (var elem in data) {
-                    if ({}.hasOwnProperty.call(data, elem)) {
+                for (var elem in orderedData) {
+                    if ({}.hasOwnProperty.call(orderedData, elem)) {
                         var item = document.createElement("li");
 
                         item.appendChild(document.createTextNode(
