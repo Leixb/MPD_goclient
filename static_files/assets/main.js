@@ -100,10 +100,8 @@ function musicRandom() {
         } else {
             fetch("/mpd/random 1");
         }
-        document.getElementById("random").style.opacity =
-            ((mpdstatus.random === "1")? "0.3" : "1");
+        musicUpdate();
     });
-    musicUpdate();
 }
 
 function playsong(songid) {
