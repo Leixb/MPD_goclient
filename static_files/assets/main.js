@@ -117,8 +117,8 @@ function populatePlaylist() {
 
                 const orderedData = {};
                 Object.keys(data).sort(function(a, b) {
-                    aI = parseInt(a, 10);
-                    bI = parseInt(b, 10);
+                    const aI = parseInt(a, 10);
+                    const bI = parseInt(b, 10);
                     if (aI > bI) {
                         return 1;
                     } else if ( aI < bI ) {
