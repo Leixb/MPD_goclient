@@ -22,13 +22,16 @@ import (
 
 type appContext struct {
 	updateGroup *bcast.Group
+	stop        chan bool
+	MPDConn     *mpdconn.MpdConn
+	coverFile   *os.File
 }
 
 func main() {
 
 	group := bcast.NewGroup()
 	go group.Broadcast(0)
-	app := appContext{group}
+	app := appContext{group, make(chan bool), nil, nil}
 
 	parser := argparse.NewParser("", "HTML MPD Client")
 
@@ -58,20 +61,20 @@ func main() {
 
 	r := gin.Default()
 
-	MPDConn, err := mpdconn.NewMpdConn(*MPDConnLocation)
+	app.MPDConn, err = mpdconn.NewMpdConn(*MPDConnLocation)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	coverFile, err := ioutil.TempFile("", "cover")
+	app.coverFile, err = ioutil.TempFile("", "cover")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(coverFile.Name())
+	defer os.Remove(app.coverFile.Name())
 
-	go app.updateAlbum(MPDConn, coverFile)
+	go app.updateAlbum()
 
-	downloadCover(MPDConn, coverFile)
+	app.downloadCover()
 
 	r.GET("/sse", func(c *gin.Context) {
 		recv := app.updateGroup.Join()
@@ -84,7 +87,7 @@ func main() {
 	})
 
 	r.GET("/mpd/:cmd", func(c *gin.Context) {
-		data, err := MPDConn.Request(c.Param("cmd"))
+		data, err := app.MPDConn.Request(c.Param("cmd"))
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -106,7 +109,7 @@ func main() {
 		c.Data(http.StatusOK, "", data)
 	})
 
-	r.StaticFile("/cover", coverFile.Name())
+	r.StaticFile("/cover", app.coverFile.Name())
 
 	r.GET("/", func(c *gin.Context) {
 		data, err := Asset("static_files/index.html")
@@ -155,8 +158,7 @@ func main() {
 
 	log.Println("Shuting down...")
 
-	log.Println("Removing temp files...")
-	os.Remove(coverFile.Name())
+	app.stop <- true
 
 	log.Println("Closing server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -172,34 +174,44 @@ func main() {
 	log.Println("Done")
 }
 
-func (app *appContext) updateAlbum(MPDConn *mpdconn.MpdConn, file *os.File) error {
+func (app *appContext) updateAlbum() error {
+	update := make(chan bool)
+	go func() {
+		for {
+			_, err := app.MPDConn.Request("idle player")
+			if err != nil {
+				fmt.Println(err)
+			}
+			update <- true
+		}
+	}()
+
 	for {
-		// Wait for MPD to communicate change
-		_, err := MPDConn.Request("idle player")
-		if err != nil {
-			fmt.Println(err)
+		select {
+		case <-update:
+			err := app.downloadCover()
+			if err != nil {
+				fmt.Println(err)
+			}
+			// Send broadcast to all /sse clients
+			app.updateGroup.Send("player update")
+		case <-app.stop:
+			return nil
 		}
-
-		err = downloadCover(MPDConn, file)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		// Send broadcast to all /sse clients
-		app.updateGroup.Send("player update")
 	}
+
 }
 
-func downloadCover(MPDConn *mpdconn.MpdConn, file *os.File) error {
+func (app *appContext) downloadCover() error {
 
 	// Get current song info
-	data, err := MPDConn.Request("currentsong")
+	data, err := app.MPDConn.Request("currentsong")
 	if err != nil {
 		return err
 	}
 
 	// Download new cover
-	err = MPDConn.DownloadCover(data["file"], file)
+	err = app.MPDConn.DownloadCover(data["file"], app.coverFile)
 	if err != nil {
 		return err
 	}
